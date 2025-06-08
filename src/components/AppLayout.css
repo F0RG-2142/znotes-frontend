@@ -1,0 +1,22 @@
+.app-layout .app-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #343a40;
+  color: white;
+}
+.app-nav-brand {
+  font-size: 1.5rem;
+}
+.logout-button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.app-content {
+  padding: 2rem;
+}
