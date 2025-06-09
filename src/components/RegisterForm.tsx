@@ -13,22 +13,22 @@ function Register() {
     setError('');
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    const user_email = formData.get('email') as string;
+    const user_password = formData.get('password') as string;
 
     try {
-      const response = await fetch('/api/v1/register', {
+      const response = await fetch('http://localhost:8080/api/v1/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
-          password,
+          user_email,
+          user_password,
         }),
       });
 
-      if (response.status === 200) {
+      if (response.status === 201) {
         localStorage.setItem('isAuthenticated', 'true');
         // Navigate within the React app
         navigate('/app');

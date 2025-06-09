@@ -21,7 +21,7 @@ function AppLayout() {
         return;
       }
 
-      const response = await fetch('/api/v1/logout', {
+      const response = await fetch('http://localhost:8080/api/v1/logout', {
         method: 'POST',
         headers: {
           'Authorization': `ApiKey ${token}`,

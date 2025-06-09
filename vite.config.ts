@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:8080', // your Go server
+      '/api/v1': 'http://localhost:8080', // your Go server
     },
   },
 })
