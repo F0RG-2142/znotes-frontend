@@ -1,78 +1,85 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import Dashboard from './Dashboard';
+import PrivateNotes from './PrivateNotes';
+import Groups from './Groups';
+
 import './AppLayout.css';
+
+type ActiveView = 'dashboard' | 'notes' | 'groups';
 
 function AppLayout() {
   const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isNavOpen, setIsNavOpen] = useState(true);
+  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('user');
+    localStorage.removeItem('jwt');
+    navigate('/');
+  };
 
-    try {
-      // Get JWT token from localStorage (adjust the key as needed)
-      const token = localStorage.getItem('jwt') || localStorage.getItem('token') || localStorage.getItem('authToken');
-      
-      if (!token) {
-        // If no token, just clear local storage and navigate
-        localStorage.removeItem('isAuthenticated');
-        navigate('/');
-        return;
-      }
-
-      const response = await fetch('http://localhost:8080/api/v1/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `ApiKey ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 204) {
-        // Successful logout - clear all auth data and navigate
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('token');
-        localStorage.removeItem('authToken');
-        navigate('/');
-      } else {
-        // Handle other status codes - still log out locally for security
-        console.error('Logout request failed, but logging out locally');
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('token');
-        localStorage.removeItem('authToken');
-        navigate('/');
-      }
-    } catch (err) {
-      // Network error - still log out locally for security
-      console.error('Logout network error, but logging out locally:', err);
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('jwt');
-      localStorage.removeItem('token');
-      localStorage.removeItem('authToken');
-      navigate('/');
-    } finally {
-      setIsLoggingOut(false);
+  const renderActiveView = () => {
+    switch (activeView) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'notes':
+        return <PrivateNotes />;
+      case 'groups':
+        return <Groups />;
+      default:
+        return <Dashboard />;
     }
   };
 
   return (
     <div className="app-layout">
-      <nav className="app-nav">
-        <div className="app-nav-brand">MyApp Dashboard</div>
-        <button 
-          onClick={handleLogout} 
-          className="logout-button"
-          disabled={isLoggingOut}
-        >
-          {isLoggingOut ? 'Logging out...' : 'Logout'}
-        </button>
+      {/* Retractable Side Navigation */}
+      <nav className={`side-nav ${isNavOpen ? 'open' : 'closed'}`}>
+        {/* This new wrapper is key to fading the content correctly */}
+        <div className="side-nav-content">
+          <div className="side-nav-header">ZNotes</div>
+          <ul>
+            <li
+              className={activeView === 'dashboard' ? 'active' : ''}
+              onClick={() => setActiveView('dashboard')}
+            >
+              Dashboard
+            </li>
+            <li
+              className={activeView === 'notes' ? 'active' : ''}
+              onClick={() => setActiveView('notes')}
+            >
+              Private Notes
+            </li>
+            <li
+              className={activeView === 'groups' ? 'active' : ''}
+              onClick={() => setActiveView('groups')}
+            >
+              Groups
+            </li>
+          </ul>
+        </div>
       </nav>
-      <main className="app-content">
-        <Dashboard />
-      </main>
+
+      {/* Main Content Area */}
+      <div className="main-content">
+        <header className="top-bar">
+          <button className="menu-toggle" onClick={() => setIsNavOpen(!isNavOpen)}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <button onClick={handleLogout} className="logout-button">
+            Logout
+          </button>
+        </header>
+        <main className="content-area">
+          {renderActiveView()}
+        </main>
+      </div>
     </div>
   );
 }

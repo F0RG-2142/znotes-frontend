@@ -29,7 +29,10 @@ function Login() {
       });
 
       if (response.status === 200) {
+        const data = await response.json();
+        localStorage.setItem('user', data.id);
         localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('jwt', data.token)
         // Navigate within the React app
         navigate('/app');
       } else {

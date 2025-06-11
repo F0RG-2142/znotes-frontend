@@ -5,7 +5,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import Login from './components/LoginForm';
 import Register from './components/RegisterForm';
 
-function App() {
+function Landing() {
   return (
     <Router>
       <Routes>
@@ -28,4 +28,4 @@ function App() {
   );
 }
 
-export default App;
+export default Landing;

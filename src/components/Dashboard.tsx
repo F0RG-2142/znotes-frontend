@@ -1,8 +1,8 @@
 function Dashboard() {
   return (
     <div>
-      <h2>Your Dashboard</h2>
-      <p>Welcome to the application. Here is your private content.</p>
+      <h1>Dashboard</h1>
+      <p>This is the main dashboard view. Welcome back!</p>
     </div>
   );
 }
