@@ -1,0 +1,46 @@
+.notes-grid {
+  display: grid;
+  /* Creates a responsive grid that fits as many 250px columns as possible */
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.note-preview-block {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.note-preview-block:hover,
+.note-preview-block:focus {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.note-title {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+  /* Prevents very long titles from breaking the layout */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-date {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #7f8c8d;
+}
+
+.error-message {
+    color: #c0392b;
+    background-color: #fbeae5;
+    border: 1px solid #e74c3c;
+    padding: 1rem;
+    border-radius: 5px;
+}
