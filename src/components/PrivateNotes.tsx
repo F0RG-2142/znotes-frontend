@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import './PrivateNotes.css'; // We'll add new styles to this file
+import LexicalEditor from './LexicalEditor';
+import { useApi } from './hooks/useApi';
+import './PrivateNotes.css';
 
-// Note interface remains the same
 interface Note {
   note_id: string;
   note_name: string;
@@ -11,108 +12,94 @@ interface Note {
   user_id: string;
 }
 
+interface ModalState {
+  type: 'create' | 'edit' | null;
+  note?: Note;
+}
+
 function PrivateNotes() {
   const [notes, setNotes] = useState<Note[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // New state for the "Add Note" modal
-  const [isCreating, setIsCreating] = useState<boolean>(false);
+  const [modal, setModal] = useState<ModalState>({ type: null });
   const [newNoteBody, setNewNoteBody] = useState<string>('');
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  
+  const { loading, error, apiCall } = useApi();
 
-  // useCallback memoizes the fetchNotes function so it can be called from anywhere
   const fetchNotes = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const jwt = localStorage.getItem('jwt');
-      if (!jwt) throw new Error('Authentication token not found. Please log in again.');
+    const data = await apiCall('/api/v1/notes');
+    if (data) setNotes(data);
+  }, [apiCall]);
 
-      const response = await fetch('http://localhost:8080/api/v1/notes', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwt}`,
-        },
-      });
-
-      if (!response.ok) throw new Error(`Failed to fetch notes: ${response.status}`);
-
-      const data: Note[] | null = await response.json();
-      setNotes(data || []);
-      setError(null); // Clear previous errors on a successful fetch
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []); // Empty dependency array means this function is created only once
-
-  // Initial fetch when component mounts
   useEffect(() => {
     fetchNotes();
   }, [fetchNotes]);
 
-  const handleSaveNote = async () => {
-    if (!newNoteBody.trim()) return; // Don't save empty notes
-
-    setIsSaving(true);
-    setError(null);
-
-    try {
-      const jwt = localStorage.getItem('jwt');
-      if (!jwt) throw new Error('Authentication token not found.');
-
-      const response = await fetch('http://localhost:8080/api/v1/notes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwt}`,
-        },
-        body: JSON.stringify({ body: newNoteBody }),
-      });
-
-      if (!response.ok) throw new Error(`Failed to save note: ${response.status}`);
-
-      // Close the modal and reset
-      setIsCreating(false);
+  const handleCreateNote = async () => {
+    if (!newNoteBody.trim()) return;
+    
+    const success = await apiCall('/api/v1/notes', {
+      method: 'POST',
+      body: JSON.stringify({ body: newNoteBody }),
+    });
+    
+    if (success) {
+      setModal({ type: null });
       setNewNoteBody('');
-      // Re-fetch all notes to display the new one
       await fetchNotes();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsSaving(false);
     }
   };
 
-  const handleNoteClick = (noteId: string) => {
-    console.log(`Clicked note with ID: ${noteId}`);
+  const handleUpdateNote = async (updatedBody: string) => {
+    if (!modal.note) return;
+    
+    const success = await apiCall(`/api/v1/notes/${modal.note.note_id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ body: updatedBody }),
+    });
+    
+    if (success) {
+      setModal({ type: null });
+      await fetchNotes();
+    }
   };
 
-  if (isLoading) return <div>Loading your notes...</div>;
+  const openCreateModal = () => setModal({ type: 'create' });
+  const openEditModal = (noteId: string) => {
+    const note = notes.find(n => n.note_id === noteId);
+    if (note) setModal({ type: 'edit', note });
+  };
+  const closeModal = () => setModal({ type: null });
+
+  if (loading && notes.length === 0) {
+    return <div className="loading">Loading your notes...</div>;
+  }
 
   return (
-    <div>
-      {/* Header with the new "Add Note" button */}
-      <div className="notes-header">
+    <div className="private-notes">
+      <header className="notes-header">
         <h1>Private Notes</h1>
-        <button onClick={() => setIsCreating(true)} className="add-note-button" title="Create a new note">
+        <button 
+          onClick={openCreateModal} 
+          className="add-note-button" 
+          title="Create a new note"
+          aria-label="Create a new note"
+        >
           +
         </button>
-      </div>
-      
+      </header>
+
       {error && <div className="error-message">Error: {error}</div>}
 
-      {/* Grid of existing notes */}
       <div className="notes-grid">
         {notes.length > 0 ? (
           notes.map((note) => (
-            <div
-              key={note.note_id}
-              className="note-preview-block"
-              onClick={() => handleNoteClick(note.note_id)}
+            <div 
+              key={note.note_id} 
+              className="note-preview-block" 
+              onClick={() => openEditModal(note.note_id)}
+              onKeyDown={(e) => e.key === 'Enter' && openEditModal(note.note_id)}
               tabIndex={0}
+              role="button"
+              aria-label={`Open note: ${note.note_name}`}
             >
               <h3 className="note-title">{note.note_name}</h3>
               <p className="note-date">
@@ -121,34 +108,74 @@ function PrivateNotes() {
             </div>
           ))
         ) : (
-          !isLoading && <p>You don't have any notes yet. Create one!</p>
+          <p className="empty-state">You don't have any notes yet. Create one!</p>
         )}
       </div>
 
-      {/* "Add Note" Modal */}
-      {isCreating && (
-        <div className="modal-backdrop">
-          <div className="modal-content">
-            <h2>Create a New Note</h2>
-            <textarea
-              value={newNoteBody}
-              onChange={(e) => setNewNoteBody(e.target.value)}
-              placeholder="Start writing your note here..."
-              className="note-editor"
-              disabled={isSaving}
-            />
-            <div className="modal-actions">
-              <button onClick={() => setIsCreating(false)} className="button-secondary" disabled={isSaving}>
-                Cancel
-              </button>
-              <button onClick={handleSaveNote} className="button-primary" disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save Note'}
-              </button>
-            </div>
+      {/* Unified Modal */}
+      {modal.type && (
+        <div className="modal-backdrop" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            {modal.type === 'create' ? (
+              <CreateNoteModal
+                body={newNoteBody}
+                onBodyChange={setNewNoteBody}
+                onSave={handleCreateNote}
+                onClose={closeModal}
+                isSaving={loading}
+              />
+            ) : modal.note ? (
+              <LexicalEditor
+                noteName={modal.note.note_name}
+                initialBody={modal.note.body}
+                onClose={closeModal}
+                onSave={handleUpdateNote}
+              />
+            ) : null}
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+interface CreateNoteModalProps {
+  body: string;
+  onBodyChange: (body: string) => void;
+  onSave: () => void;
+  onClose: () => void;
+  isSaving: boolean;
+}
+
+function CreateNoteModal({ body, onBodyChange, onSave, onClose, isSaving }: CreateNoteModalProps) {
+  return (
+    <>
+      <h2>Create a New Note</h2>
+      <textarea 
+        value={body} 
+        onChange={(e) => onBodyChange(e.target.value)}
+        placeholder="Start writing your note here..."
+        className="note-editor"
+        disabled={isSaving}
+        autoFocus
+      />
+      <div className="modal-actions">
+        <button 
+          onClick={onClose} 
+          className="button-secondary" 
+          disabled={isSaving}
+        >
+          Cancel
+        </button>
+        <button 
+          onClick={onSave} 
+          className="button-primary" 
+          disabled={isSaving || !body.trim()}
+        >
+          {isSaving ? 'Saving...' : 'Save Note'}
+        </button>
+      </div>
+    </>
   );
 }
 
