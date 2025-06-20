@@ -14,16 +14,16 @@ function LandingPage() {
         <h2>Features</h2>
         <div className="features-grid">
           <div className="feature-card">
-            <h3>Feature One</h3>
-            <p>Description of the first amazing feature.</p>
+            <h3>Fast</h3>
+            <p>Focusing on simplicity makes ZNotes very responsive, Svelte rewrite planned</p>
           </div>
           <div className="feature-card">
-            <h3>Feature Two</h3>
-            <p>Description of the second amazing feature.</p>
+            <h3>Minimal</h3>
+            <p>No unneeded features, just notes, thats it (for now).</p>
           </div>
           <div className="feature-card">
-            <h3>Feature Three</h3>
-            <p>Description of the third amazing feature.</p>
+            <h3>Colaborative</h3>
+            <p>Built to be colaborative with concurrent editing on group notes</p>
           </div>
         </div>
       </section>
