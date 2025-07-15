@@ -117,11 +117,11 @@ function PrivateNotes() {
         <div className="modal-backdrop" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             {modal.type === 'create' ? (
-              <CreateNoteModal
-                body={newNoteBody}
-                onBodyChange={setNewNoteBody}
-                onSave={handleCreateNote}
+              <LexicalEditor
+                noteName={newNoteBody[0]}
+                initialBody={newNoteBody}
                 onClose={closeModal}
+                onSave={handleCreateNote}
                 isSaving={loading}
               />
             ) : modal.note ? (
@@ -136,46 +136,6 @@ function PrivateNotes() {
         </div>
       )}
     </div>
-  );
-}
-
-interface CreateNoteModalProps {
-  body: string;
-  onBodyChange: (body: string) => void;
-  onSave: () => void;
-  onClose: () => void;
-  isSaving: boolean;
-}
-
-function CreateNoteModal({ body, onBodyChange, onSave, onClose, isSaving }: CreateNoteModalProps) {
-  return (
-    <>
-      <h2>Create a New Note</h2>
-      <textarea 
-        value={body} 
-        onChange={(e) => onBodyChange(e.target.value)}
-        placeholder="Start writing your note here..."
-        className="note-editor"
-        disabled={isSaving}
-        autoFocus
-      />
-      <div className="modal-actions">
-        <button 
-          onClick={onClose} 
-          className="button-secondary" 
-          disabled={isSaving}
-        >
-          Cancel
-        </button>
-        <button 
-          onClick={onSave} 
-          className="button-primary" 
-          disabled={isSaving || !body.trim()}
-        >
-          {isSaving ? 'Saving...' : 'Save Note'}
-        </button>
-      </div>
-    </>
   );
 }
 
