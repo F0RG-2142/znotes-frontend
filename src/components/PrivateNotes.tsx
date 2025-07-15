@@ -130,6 +130,7 @@ function PrivateNotes() {
                 initialBody={modal.note.body}
                 onClose={closeModal}
                 onSave={handleUpdateNote}
+                isSaving={loading}
               />
             ) : null}
           </div>

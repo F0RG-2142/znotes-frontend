@@ -93,7 +93,6 @@ function LexicalEditor({ noteName, initialBody, onClose, onSave, isSaving = fals
           <div className="editor-inner">
             <RichTextPlugin
               contentEditable={<ContentEditable className="editor-input" />}
-              placeholder={<div className="editor-placeholder">Start writing...</div>}
               ErrorBoundary={LexicalErrorBoundary}
             />
           </div>
