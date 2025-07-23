@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BarChart3, Clock, Users, FileText, Plus, BookOpen, TrendingUp, AlertCircle } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,11 +12,13 @@ const Dashboard: React.FC = () => {
   const { teams, isLoading: teamsLoading } = useTeams();
   
   // Calculate dashboard stats
-  const totalNotes = notes.length;
-  const totalTeams = teams.length;
+  const totalNotes = notes?.length || 0;
+  const totalTeams = teams?.length || 0;
   const recentNotes = notes
+    ? notes
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 5);
+    .slice(0, 5)
+    : [];
 
   // Mock activity data (you could enhance this with real activity tracking)
   const [activityData] = useState([

@@ -54,7 +54,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:fixed lg:inset-y-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
@@ -74,7 +74,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </button>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           {navigation.map((item) => {
             const Icon = item.icon;
             return (
@@ -96,7 +96,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </nav>
 
         {/* User section */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-gray-200 p-4 flex-shrink-0">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-gray-600" />
@@ -166,7 +166,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </div>
 
         {/* Page content */}
-        <main className="p-6">
+        <main className="p-6 min-h-screen">
           {children}
         </main>
       </div>

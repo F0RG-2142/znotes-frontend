@@ -24,7 +24,11 @@ const NoteEditor: React.FC = () => {
   
   useEffect(() => {
     const loadNote = async () => {
-      if (!id) return;
+      if (!id) {
+        setError('Note ID is missing');
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       setError(null);

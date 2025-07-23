@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, FileText, Calendar, Trash2, Edit3, Filter, Grid, List } from 'lucide-react';
+import { Search, Plus, FileText, Calendar, Trash2, Edit3, Grid, List } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useNotes } from '../hooks/useNotes';
 import { Link, useNavigate } from 'react-router-dom';
@@ -181,7 +181,9 @@ const PrivateNotes: React.FC = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            navigate(`/note/${note.id}`);
+                            if (note.id) {
+                              navigate(`/note/${note.id}`);
+                            }
                           }}
                           className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-indigo-600 transition-all"
                         >
@@ -234,7 +236,9 @@ const PrivateNotes: React.FC = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            navigate(`/note/${note.id}`);
+                            if (note.id) {
+                              navigate(`/note/${note.id}`);
+                            }
                           }}
                           className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-indigo-600 transition-all"
                         >
