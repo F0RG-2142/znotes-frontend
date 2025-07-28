@@ -12,7 +12,7 @@ export interface LoginResponse extends User {
 }
 
 export interface Note {
-  id: string;
+  note_id: string;
   created_at: string;
   updated_at: string;
   body: string;

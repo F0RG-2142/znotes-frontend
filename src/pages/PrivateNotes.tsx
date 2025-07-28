@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, FileText, Calendar, Trash2, Edit3, Grid, List } from 'lucide-react';
+import { Search, Plus, FileText, Trash2, Edit3, Grid, List } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useNotes } from '../hooks/useNotes';
 import { Link, useNavigate } from 'react-router-dom';
@@ -121,57 +121,48 @@ const PrivateNotes: React.FC = () => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
-            
             <div className="flex gap-2">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'updated' | 'created' | 'title')}
+                onChange={(e) => setSortBy(e.target.value as any)}
                 className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="updated">Last Updated</option>
                 <option value="created">Date Created</option>
                 <option value="title">Title</option>
               </select>
-              
-              <div className="flex border border-gray-200 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {viewMode === 'grid' ? <List className="w-4 h-4" /> : <Grid className="w-4 h-4" />}
+              </button>
             </div>
           </div>
         </div>
 
         {/* Notes Grid/List */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your notes...</p>
           </div>
         ) : filteredAndSortedNotes.length > 0 ? (
           <div className={viewMode === 'grid' 
             ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
             : "space-y-3"
           }>
-            {filteredAndSortedNotes.map((note) => (
+            {filteredAndSortedNotes.map((note, index) => (
               <Link
-                key={note.id}
-                to={`/note/${note.id}`}
+                key={note.note_id || `note-${index}`}
+                to={`/note/${note.note_id}`}
                 className={`group block ${viewMode === 'grid' 
                   ? 'bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200' 
                   : 'bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200'
                 }`}
               >
                 {viewMode === 'grid' ? (
-                  <>
+                  <div>
                     <div className="flex items-start justify-between mb-3">
                       <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
                         <FileText className="w-5 h-5 text-indigo-600" />
@@ -181,8 +172,8 @@ const PrivateNotes: React.FC = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (note.id) {
-                              navigate(`/note/${note.id}`);
+                            if (note.note_id) {
+                              navigate(`/note/${note.note_id}`);
                             }
                           }}
                           className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-indigo-600 transition-all"
@@ -190,43 +181,34 @@ const PrivateNotes: React.FC = () => {
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={(e) => handleDeleteNote(note.id, e)}
+                          onClick={(e) => handleDeleteNote(note.note_id, e)}
                           className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                    
                     <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {extractTitle(note.body)}
+                      {extractTitle(note.body) || 'Untitled Note'}
                     </h3>
-                    
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                      {note.body.split('\n').slice(1).join('\n').substring(0, 120)}...
+                    <p className="text-gray-500 text-sm line-clamp-3 mb-4">
+                      {note.body.substring(extractTitle(note.body).length).trim() || 'No additional content'}
                     </p>
-                    
-                    <div className="flex items-center text-xs text-gray-400">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {formatDate(note.updated_at)}
+                    <div className="flex items-center justify-between text-xs text-gray-400">
+                      <span>{formatDate(note.updated_at)}</span>
+                      <span>{note.body.length > 100 ? `${note.body.length} characters` : ''}</span>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <FileText className="w-4 h-4 text-indigo-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {extractTitle(note.body)}
-                        </h3>
-                        <p className="text-sm text-gray-500 truncate">
-                          {note.body.split('\n').slice(1).join(' ').substring(0, 80)}...
-                        </p>
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {extractTitle(note.body) || 'Untitled Note'}
+                      </h3>
+                      <p className="text-gray-500 text-sm truncate">
+                        {note.body.substring(extractTitle(note.body).length).trim() || 'No additional content'}
+                      </p>
                     </div>
-                    
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-xs text-gray-400">
                         {formatDate(note.updated_at)}
@@ -236,8 +218,8 @@ const PrivateNotes: React.FC = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (note.id) {
-                              navigate(`/note/${note.id}`);
+                            if (note.note_id) {
+                              navigate(`/note/${note.note_id}`);
                             }
                           }}
                           className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-indigo-600 transition-all"
@@ -245,7 +227,7 @@ const PrivateNotes: React.FC = () => {
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={(e) => handleDeleteNote(note.id, e)}
+                          onClick={(e) => handleDeleteNote(note.note_id, e)}
                           className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
