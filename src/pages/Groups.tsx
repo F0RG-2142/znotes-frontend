@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Plus, Search, Settings, Trash2, Crown, User, Lock, Globe } from 'lucide-react';
+import { Users, Plus, Search, Trash2, Crown, User, Lock, Globe } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useTeams } from '../hooks/useTeams';
 import { Link } from 'react-router-dom';
@@ -14,7 +14,7 @@ const Groups: React.FC = () => {
   const [newTeamPrivate, setNewTeamPrivate] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
-  const filteredTeams = teams.filter(team =>
+  const filteredTeams = (teams || []).filter(team =>
     team.team_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -78,7 +78,7 @@ const Groups: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Teams</h1>
-            <p className="text-gray-500 mt-1">{teams.length} teams total</p>
+            <p className="text-gray-500 mt-1">{(teams || []).length} teams total</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}

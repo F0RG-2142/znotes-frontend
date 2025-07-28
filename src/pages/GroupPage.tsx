@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Users, Plus, FileText, Settings, UserPlus, Crown, User, Calendar, Trash2, Edit3 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useTeams } from '../hooks/useTeams';
@@ -9,9 +9,10 @@ import { useAuth } from '../contexts/AuthContext';
 
 const GroupPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { getTeam, getTeamMembers } = useTeams();
-  const { notes, createTeamNote, deleteTeamNote, isLoading: notesLoading } = useTeamNotes(id || '');
+  const { notes, createTeamNote, deleteTeamNote, isLoading: notesLoading, error: notesError } = useTeamNotes(id || '');
   
   const [team, setTeam] = useState<Team | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -23,17 +24,30 @@ const GroupPage: React.FC = () => {
 
   useEffect(() => {
     const loadTeamData = async () => {
-      if (!id) return;
+      // Check if ID exists
+      if (!id) {
+        setError('Invalid team ID');
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
+      setError(null);
       try {
+        // Fetch team data and members in parallel
         const [teamData, membersData] = await Promise.all([
-          getTeam(id),
-          getTeamMembers(id)
+          getTeam(id).catch(err => {
+            throw new Error(`Failed to load team: ${err.message || 'Unknown error'}`);
+          }),
+          getTeamMembers(id).catch(err => {
+            throw new Error(`Failed to load team members: ${err.message || 'Unknown error'}`);
+          })
         ]);
+        
         setTeam(teamData);
         setMembers(membersData);
       } catch (error) {
+        console.error('Error loading team data:', error);
         setError(error instanceof Error ? error.message : 'Failed to load team data');
       } finally {
         setIsLoading(false);
@@ -85,9 +99,9 @@ const GroupPage: React.FC = () => {
   };
 
   const isOwner = team?.created_by === user?.id;
-  const userRole = members.find(m => m.user_id === user?.id)?.role || 'member';
 
-  if (isLoading) {
+  // Show loading state
+  if (isLoading || notesLoading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center py-12">
@@ -97,27 +111,35 @@ const GroupPage: React.FC = () => {
     );
   }
 
-  if (error) {
+  // Show errors
+  if (error || notesError) {
     return (
       <AppLayout>
         <div className="text-center py-8">
-          <div className="text-red-600 mb-4">Error: {error}</div>
-          <Link to="/groups" className="text-indigo-600 hover:text-indigo-700">
+          <div className="text-red-600 mb-4">Error: {error || notesError}</div>
+          <button 
+            onClick={() => navigate('/groups')} 
+            className="text-indigo-600 hover:text-indigo-700"
+          >
             ← Back to Teams
-          </Link>
+          </button>
         </div>
       </AppLayout>
     );
   }
 
+  // Show not found
   if (!team) {
     return (
       <AppLayout>
         <div className="text-center py-8">
           <div className="text-gray-600 mb-4">Team not found</div>
-          <Link to="/groups" className="text-indigo-600 hover:text-indigo-700">
+          <button 
+            onClick={() => navigate('/groups')} 
+            className="text-indigo-600 hover:text-indigo-700"
+          >
             ← Back to Teams
-          </Link>
+          </button>
         </div>
       </AppLayout>
     );
@@ -129,127 +151,90 @@ const GroupPage: React.FC = () => {
         {/* Team Header */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-6 text-white">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                <Users className="w-8 h-8" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{team.team_name}</h1>
-                <div className="flex items-center gap-4 mt-2 text-purple-100">
-                  <div className="flex items-center gap-1">
-                    {isOwner ? (
-                      <>
-                        <Crown className="w-4 h-4" />
-                        <span>Owner</span>
-                      </>
-                    ) : (
-                      <>
-                        <User className="w-4 h-4" />
-                        <span className="capitalize">{userRole}</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>Created {formatDate(team.created_at)}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    <span>{members.length} members</span>
-                  </div>
+            <div>
+              <h1 className="text-2xl font-bold mb-2">{team.team_name}</h1>
+              <div className="flex items-center gap-4 text-purple-100">
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  <span>{members.length} member{members.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <FileText className="w-4 h-4" />
+                  <span>{notes.length} note{notes.length !== 1 ? 's' : ''}</span>
                 </div>
               </div>
             </div>
             
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                New Note
+            {isOwner && (
+              <button className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-colors">
+                <Settings className="w-5 h-5" />
               </button>
-              {isOwner && (
-                <button className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all">
-                  <Settings className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Team Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Team Notes</p>
-                <p className="text-2xl font-bold text-gray-900">{notes.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <FileText className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
+        {/* Members Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Members</h2>
+            {isOwner && (
+              <button className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700">
+                <UserPlus className="w-4 h-4" />
+                <span>Add Member</span>
+              </button>
+            )}
           </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Members</p>
-                <p className="text-2xl font-bold text-gray-900">{members.length}</p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {members.map((member) => (
+              <div key={member.user_id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">
+                    {member.user_id === user?.id ? 'You' : `User ${member.user_id.substring(0, 8)}`}
+                  </div>
+                  <div className="text-xs text-gray-500 flex items-center gap-1">
+                    {member.role === 'owner' && (
+                      <>
+                        <Crown className="w-3 h-3" />
+                        <span>Owner</span>
+                      </>
+                    )}
+                    {member.role !== 'owner' && (
+                      <span className="capitalize">{member.role}</span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Privacy</p>
-                <p className="text-lg font-semibold text-gray-900 capitalize">
-                  {team.is_private ? 'Private' : 'Public'}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                {team.is_private ? (
-                  <UserPlus className="w-6 h-6 text-green-600" />
-                ) : (
-                  <Users className="w-6 h-6 text-green-600" />
-                )}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Team Notes */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
+        {/* Notes Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Team Notes</h2>
-            <button
+            <button 
               onClick={() => setShowCreateModal(true)}
-              className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-sm font-medium"
+              className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Add Note
+              <span>New Note</span>
             </button>
           </div>
-
-          {notesLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-            </div>
-          ) : notes.length > 0 ? (
+          
+          {notes.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {notes.map((note) => (
-                <Link
+                <Link 
                   key={note.note_id}
-                  to={`/groups/${id}/notes/${note.note_id}`}
-                  className="group block p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200"
+                  to={`/groups/${team.team_id}/notes/${note.note_id}`}
+                  className="group border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-sm transition-all block"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <div className="p-2 bg-indigo-50 rounded-lg">
                       <FileText className="w-4 h-4 text-indigo-600" />
                     </div>
                     <div className="flex gap-1">
@@ -280,7 +265,8 @@ const GroupPage: React.FC = () => {
                     {note.body.split('\n').slice(1).join(' ').substring(0, 80)}...
                   </p>
                   
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-gray-400 flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
                     {formatDate(note.updated_at)}
                   </div>
                 </Link>
