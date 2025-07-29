@@ -143,7 +143,8 @@ const NoteEditor: React.FC = () => {
     if (!body) return 'Untitled Note';
     const firstLine = body.split('\n')[0];
     const words = firstLine.trim().split(' ').filter(word => word.length > 0);
-    return words.slice(0, 3).join(' ') || 'Untitled Note';
+    const title = words.slice(0, 10).join(' ');
+    return title.length > 50 ? title.substring(0, 50) + '...' : title || 'Untitled Note';
   };
 
 

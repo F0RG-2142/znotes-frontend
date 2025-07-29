@@ -27,19 +27,15 @@ const PrivateNotes: React.FC = () => {
         case 'created':
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case 'title':
-          const titleA = extractTitle(a.note_body);
-          const titleB = extractTitle(b.note_body);
+          const titleA = a.note_name || 'Untitled Note';
+          const titleB = b.note_name || 'Untitled Note';
           return titleA.localeCompare(titleB);
         default:
           return 0;
       }
     });
 
-  const extractTitle = (body: string) => {
-    if (!body) return 'Untitled Note';
-    const firstLine = body.split('\n')[0];
-    return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine || 'Untitled Note';
-  };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -193,10 +189,10 @@ const PrivateNotes: React.FC = () => {
                       </div>
                     </div>
                     <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {extractTitle(note.note_body) || 'Untitled Note'}
+                      {note.note_name || 'Untitled Note'}
                     </h3>
                     <p className="text-gray-500 text-sm line-clamp-3 mb-4">
-                      {note.note_body ? note.note_body.substring(extractTitle(note.note_body).length).trim() || 'No additional content' : 'No additional content'}
+                      {note.note_body || 'No additional content'}
                     </p>
                     <div className="flex items-center justify-between text-xs text-gray-400">
                       <span>{formatDate(note.updated_at)}</span>
@@ -207,10 +203,10 @@ const PrivateNotes: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 truncate">
-                        {extractTitle(note.note_body) || 'Untitled Note'}
+                        {note.note_name || 'Untitled Note'}
                       </h3>
                       <p className="text-gray-500 text-sm truncate">
-                        {note.note_body ? note.note_body.substring(extractTitle(note.note_body).length).trim() || 'No additional content' : 'No additional content'}
+                        {note.note_body || 'No additional content'}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
