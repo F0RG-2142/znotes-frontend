@@ -14,17 +14,14 @@ const NoteEditor: React.FC = () => {
   
   const [note, setNote] = useState<Note | TeamNote | null>(null);
   const [content, setContent] = useState('');
+  const [noteName, setNoteName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Debugging: Log the ID parameter
-  useEffect(() => {
-    console.log('NoteEditor ID parameter:', id);
-    console.log('NoteEditor groupId parameter:', groupId);
-  }, [id, groupId]);
+
 
   const isTeamNote = !!groupId;
   
@@ -54,6 +51,7 @@ const NoteEditor: React.FC = () => {
         
         setNote(noteData);
         setContent(noteData.note_body || '');
+        setNoteName(noteData.note_name || extractDefaultTitle(noteData.note_body || ''));
         setLastSaved(new Date(noteData.updated_at));
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to load note');
@@ -67,7 +65,12 @@ const NoteEditor: React.FC = () => {
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
-    setHasUnsavedChanges(newContent !== note?.note_body);
+    setHasUnsavedChanges(newContent !== note?.note_body || noteName !== note?.note_name);
+  };
+
+  const handleNameChange = (newName: string) => {
+    setNoteName(newName);
+    setHasUnsavedChanges(newName !== note?.note_name || content !== note?.note_body);
   };
 
   const handleSave = async () => {
@@ -75,13 +78,14 @@ const NoteEditor: React.FC = () => {
     
     setIsSaving(true);
     try {
+      const finalNoteName = noteName || extractDefaultTitle(content);
       if (isTeamNote && groupId) {
         await teamNotesHook.updateTeamNote(id!, content);
       } else {
-        await updateNote(id!, content);
+        await updateNote(id!, content, finalNoteName);
       }
       
-      setNote({ ...note, note_body: content, updated_at: new Date().toISOString() });
+      setNote({ ...note, note_body: content, note_name: finalNoteName, updated_at: new Date().toISOString() });
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
     } catch (error) {
@@ -135,11 +139,14 @@ const NoteEditor: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  const extractTitle = (body: string) => {
+  const extractDefaultTitle = (body: string) => {
     if (!body) return 'Untitled Note';
     const firstLine = body.split('\n')[0];
-    return firstLine || 'Untitled Note';
+    const words = firstLine.trim().split(' ').filter(word => word.length > 0);
+    return words.slice(0, 3).join(' ') || 'Untitled Note';
   };
+
+
 
   if (isLoading) {
     return (
@@ -196,10 +203,14 @@ const NoteEditor: React.FC = () => {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">
-                {extractTitle(content)}
-              </h1>
+            <div className="flex-1">
+              <input
+                type="text"
+                value={noteName}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="Note title"
+                className="w-full text-lg font-semibold text-gray-900 bg-transparent border-none outline-none focus:ring-0 placeholder-gray-400"
+              />
               {isTeamNote && (
                 <p className="text-sm text-gray-500">Team Note</p>
               )}

@@ -31,8 +31,9 @@ export const useNotes = () => {
     await fetchNotes(); // Refresh notes list
   };
 
-  const updateNote = async (noteId: string, body: string) => {
-    await apiService.updateNote(noteId, { note_id: noteId, note_body: body, note_name: body.split('\n')[0] || 'Untitled Note' });
+  const updateNote = async (noteId: string, body: string, name?: string) => {
+    const noteName = name || body.split('\n')[0] || 'Untitled Note';
+    await apiService.updateNote(noteId, { note_id: noteId, note_body: body, note_name: noteName });
     await fetchNotes(); // Refresh notes list
   };
 

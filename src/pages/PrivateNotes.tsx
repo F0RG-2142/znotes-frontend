@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, Plus, FileText, Trash2, Edit3, Grid, List } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useNotes } from '../hooks/useNotes';
@@ -14,15 +14,7 @@ const PrivateNotes: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
 
-  // Debugging: Log the notes data to see the actual structure
-  useEffect(() => {
-    console.log('Notes data:', notes);
-    // Log individual note objects to check their ID values
-    notes.forEach((note, index) => {
-      console.log(`Note ${index}:`, note);
-      console.log(`Note ${index} ID:`, note.note_id);
-    });
-  }, [notes]);
+
 
   const filteredAndSortedNotes = notes
     .filter(note => 
@@ -171,7 +163,7 @@ const PrivateNotes: React.FC = () => {
                   ? 'bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200' 
                   : 'bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200'
                 }`}
-                onClick={() => console.log('Navigating to note with ID:', note.note_id)}
+                onClick={() => {}}
               >
                 {viewMode === 'grid' ? (
                   <div>
