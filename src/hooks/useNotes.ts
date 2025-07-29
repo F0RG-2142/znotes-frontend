@@ -32,7 +32,7 @@ export const useNotes = () => {
   };
 
   const updateNote = async (noteId: string, body: string) => {
-    await apiService.updateNote(noteId, { noteID: noteId, body });
+    await apiService.updateNote(noteId, { note_id: noteId, note_body: body, note_name: body.split('\n')[0] || 'Untitled Note' });
     await fetchNotes(); // Refresh notes list
   };
 
@@ -42,6 +42,9 @@ export const useNotes = () => {
   };
 
   const getNote = async (noteId: string): Promise<Note> => {
+    if (!noteId || noteId === 'undefined') {
+      throw new Error('Invalid note ID');
+    }
     return apiService.getNote(noteId);
   };
 

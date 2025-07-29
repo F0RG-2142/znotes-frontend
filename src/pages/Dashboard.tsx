@@ -43,6 +43,7 @@ const Dashboard: React.FC = () => {
   };
 
   const extractTitle = (body: string) => {
+    if (!body) return 'Untitled Note';
     const firstLine = body.split('\n')[0];
     return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine || 'Untitled Note';
   };
@@ -201,16 +202,16 @@ const Dashboard: React.FC = () => {
           {recentNotes.length > 0 ? (
             <div className="space-y-4">
               {recentNotes.map((note) => (
-                <div key={note.id} className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                <div key={note.note_id} className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
                   <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
                     <FileText className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="flex-grow min-w-0">
                     <Link
-                      to={`/note/${note.id}`}
+                      to={`/note/${note.note_id}`}
                       className="text-sm font-medium text-gray-900 hover:text-indigo-600 transition-colors block truncate"
                     >
-                      {extractTitle(note.body)}
+                      {extractTitle(note.note_body)}
                     </Link>
                     <p className="text-xs text-gray-500 mt-1">
                       Updated {formatDate(note.updated_at)}

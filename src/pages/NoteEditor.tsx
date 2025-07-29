@@ -20,12 +20,18 @@ const NoteEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Debugging: Log the ID parameter
+  useEffect(() => {
+    console.log('NoteEditor ID parameter:', id);
+    console.log('NoteEditor groupId parameter:', groupId);
+  }, [id, groupId]);
+
   const isTeamNote = !!groupId;
   
   useEffect(() => {
     const loadNote = async () => {
-      if (!id) {
-        setError('Note ID is missing');
+      if (!id || id === 'undefined') {
+        setError('Note ID is missing or invalid');
         setIsLoading(false);
         return;
       }
@@ -39,11 +45,15 @@ const NoteEditor: React.FC = () => {
         if (isTeamNote && groupId) {
           noteData = await teamNotesHook.getTeamNote(id);
         } else {
+          // Additional safety check
+          if (!id || id === 'undefined') {
+            throw new Error('Invalid note ID');
+          }
           noteData = await getNote(id);
         }
         
         setNote(noteData);
-        setContent(noteData.body);
+        setContent(noteData.note_body || '');
         setLastSaved(new Date(noteData.updated_at));
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to load note');
@@ -57,7 +67,7 @@ const NoteEditor: React.FC = () => {
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
-    setHasUnsavedChanges(newContent !== note?.body);
+    setHasUnsavedChanges(newContent !== note?.note_body);
   };
 
   const handleSave = async () => {
@@ -71,7 +81,7 @@ const NoteEditor: React.FC = () => {
         await updateNote(id!, content);
       }
       
-      setNote({ ...note, body: content, updated_at: new Date().toISOString() });
+      setNote({ ...note, note_body: content, updated_at: new Date().toISOString() });
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
     } catch (error) {
@@ -126,6 +136,7 @@ const NoteEditor: React.FC = () => {
   }, [hasUnsavedChanges]);
 
   const extractTitle = (body: string) => {
+    if (!body) return 'Untitled Note';
     const firstLine = body.split('\n')[0];
     return firstLine || 'Untitled Note';
   };

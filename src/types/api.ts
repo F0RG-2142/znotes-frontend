@@ -13,9 +13,10 @@ export interface LoginResponse extends User {
 
 export interface Note {
   note_id: string;
+  note_name: string;
   created_at: string;
   updated_at: string;
-  body: string;
+  note_body: string;
   user_id: string;
 }
 
@@ -30,9 +31,10 @@ export interface Team {
 
 export interface TeamNote {
   note_id: string;
+  note_name: string;
   created_at: string;
   updated_at: string;
-  body: string;
+  note_body: string;
   user_id: string;
 }
 
@@ -62,8 +64,9 @@ export interface CreateNoteRequest {
 }
 
 export interface UpdateNoteRequest {
-  noteID: string;
-  body: string;
+  note_id: string;
+  note_body: string;
+  note_name: string;
 }
 
 export interface CreateTeamRequest {
@@ -83,5 +86,6 @@ export interface CreateTeamNoteRequest {
 }
 
 export interface UpdateTeamNoteRequest {
-  body: string;
+  note_body: string;
+  note_name: string;
 }

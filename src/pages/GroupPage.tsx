@@ -258,11 +258,11 @@ const GroupPage: React.FC = () => {
                   </div>
                   
                   <h3 className="font-medium text-gray-900 mb-1 line-clamp-2 text-sm">
-                    {extractTitle(note.body)}
+                    {extractTitle(note.note_body)}
                   </h3>
                   
                   <p className="text-xs text-gray-500 line-clamp-2 mb-2">
-                    {note.body.split('\n').slice(1).join(' ').substring(0, 80)}...
+                    {note.note_body.split('\n').slice(1).join(' ').substring(0, 80)}...
                   </p>
                   
                   <div className="text-xs text-gray-400 flex items-center gap-1">

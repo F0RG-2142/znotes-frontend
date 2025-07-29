@@ -32,7 +32,7 @@ export const useTeamNotes = (teamId: string) => {
   };
 
   const updateTeamNote = async (noteId: string, body: string) => {
-    await apiService.updateTeamNote(teamId, noteId, { body });
+    await apiService.updateTeamNote(teamId, noteId, { note_body: body, note_name: body.split('\n')[0] || 'Untitled Note' });
     await fetchTeamNotes(); // Refresh notes list
   };
 

@@ -181,6 +181,9 @@ class ApiService {
   }
 
   async getNote(noteId: string): Promise<Note> {
+    if (!noteId || noteId === 'undefined') {
+      throw new Error('Invalid note ID');
+    }
     return this.request<Note>(`/api/v1/notes/${noteId}`);
   }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, FileText, Trash2, Edit3, Grid, List } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { useNotes } from '../hooks/useNotes';
@@ -14,9 +14,19 @@ const PrivateNotes: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
 
+  // Debugging: Log the notes data to see the actual structure
+  useEffect(() => {
+    console.log('Notes data:', notes);
+    // Log individual note objects to check their ID values
+    notes.forEach((note, index) => {
+      console.log(`Note ${index}:`, note);
+      console.log(`Note ${index} ID:`, note.note_id);
+    });
+  }, [notes]);
+
   const filteredAndSortedNotes = notes
     .filter(note => 
-      note.body.toLowerCase().includes(searchTerm.toLowerCase())
+      !searchTerm || (note.note_body && note.note_body.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
       switch (sortBy) {
@@ -25,8 +35,8 @@ const PrivateNotes: React.FC = () => {
         case 'created':
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case 'title':
-          const titleA = extractTitle(a.body);
-          const titleB = extractTitle(b.body);
+          const titleA = extractTitle(a.note_body);
+          const titleB = extractTitle(b.note_body);
           return titleA.localeCompare(titleB);
         default:
           return 0;
@@ -34,6 +44,7 @@ const PrivateNotes: React.FC = () => {
     });
 
   const extractTitle = (body: string) => {
+    if (!body) return 'Untitled Note';
     const firstLine = body.split('\n')[0];
     return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine || 'Untitled Note';
   };
@@ -152,14 +163,15 @@ const PrivateNotes: React.FC = () => {
             ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
             : "space-y-3"
           }>
-            {filteredAndSortedNotes.map((note, index) => (
+            {filteredAndSortedNotes.filter(note => note.note_id).map((note) => (
               <Link
-                key={note.note_id || `note-${index}`}
+                key={note.note_id}
                 to={`/note/${note.note_id}`}
                 className={`group block ${viewMode === 'grid' 
                   ? 'bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200' 
                   : 'bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200'
                 }`}
+                onClick={() => console.log('Navigating to note with ID:', note.note_id)}
               >
                 {viewMode === 'grid' ? (
                   <div>
@@ -189,24 +201,24 @@ const PrivateNotes: React.FC = () => {
                       </div>
                     </div>
                     <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {extractTitle(note.body) || 'Untitled Note'}
+                      {extractTitle(note.note_body) || 'Untitled Note'}
                     </h3>
                     <p className="text-gray-500 text-sm line-clamp-3 mb-4">
-                      {note.body.substring(extractTitle(note.body).length).trim() || 'No additional content'}
+                      {note.note_body ? note.note_body.substring(extractTitle(note.note_body).length).trim() || 'No additional content' : 'No additional content'}
                     </p>
                     <div className="flex items-center justify-between text-xs text-gray-400">
                       <span>{formatDate(note.updated_at)}</span>
-                      <span>{note.body.length > 100 ? `${note.body.length} characters` : ''}</span>
+                      <span>{note.note_body && note.note_body.length > 100 ? `${note.note_body.length} characters` : ''}</span>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 truncate">
-                        {extractTitle(note.body) || 'Untitled Note'}
+                        {extractTitle(note.note_body) || 'Untitled Note'}
                       </h3>
                       <p className="text-gray-500 text-sm truncate">
-                        {note.body.substring(extractTitle(note.body).length).trim() || 'No additional content'}
+                        {note.note_body ? note.note_body.substring(extractTitle(note.note_body).length).trim() || 'No additional content' : 'No additional content'}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
