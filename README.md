@@ -1,3 +1,3 @@
-# ZNotes Frontend 2
+# ZNotes Frontend
 
-Just an alternative to work on
+The frontend repo for ZNotes
