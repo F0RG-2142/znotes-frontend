@@ -71,7 +71,7 @@ jobs:
       # download dist folder on Windows
       
       - name: Download dist folder
-        if: matrix.build_frontend =+ false
+        if: matrix.build_frontend == false
         uses: actions/download-artifact@v3
         with:
           name: frontend-dist
