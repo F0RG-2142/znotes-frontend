@@ -71,7 +71,7 @@ jobs:
       # download dist folder on Windows
       
       - name: Download dist folder
-        if: matrix.build_frontend = false
+        if: matrix.build_frontend =+ false
         uses: actions/download-artifact@v3
         with:
           name: frontend-dist
@@ -87,7 +87,7 @@ jobs:
         shell: bash
 
       - name: Copy dist to Go server
-        if: matrix.build_frontend = false
+        if: matrix.build_frontend == false
         run: |
           Remove-Item -Force -Recurse -Path "frontend-go-server\dist" -ErrorAction SilentlyContinue
           Copy-Item -Recurse -Path "dist" -Destination "frontend-go-server\dist"
