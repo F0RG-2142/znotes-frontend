@@ -15,8 +15,8 @@ import (
 var dist embed.FS
 
 func main() {
-    frontendPort := getEnv("FRONTEND_PORT", "3000")
-    backendURL := getEnv("BACKEND_URL", "http://localhost:8000")
+    frontendPort := getEnv("FRONTEND_PORT", "5173")
+    backendURL := getEnv("BACKEND_URL", "http://localhost:8080")
 
     // Parse backend URL
     backend, err := url.Parse(backendURL)

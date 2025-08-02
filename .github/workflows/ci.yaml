@@ -1,0 +1,158 @@
+name: Build and Release Frontend (Linux + Windows)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  BINARY_NAME: frontend-server
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            ext: ""
+            suffix: linux-amd64
+            build_frontend: true
+          
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            ext: ".exe"
+            suffix: windows-amd64
+            build_frontend: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      # bbuild frontend (only on Linux)
+      
+      - name: Build React App
+        if: matrix.build_frontend
+        run: |
+          npm ci
+          npm run build
+          echo "Frontend built: dist/ created"
+
+       # upload dist/ folder (from Linux)
+      
+      - name: Upload dist folder
+        if: matrix.build_frontend
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-dist
+          path: dist/
+          retention-days: 1
+
+      # download dist folder on Windows
+      
+      - name: Download dist folder
+        if: not(matrix.build_frontend)
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-dist
+          path: dist/
+
+      # copy dist into frontend-go-server
+      - name: Copy dist to Go server
+        run: |
+          # Ensure target directory exists
+          rm -rf frontend-go-server/dist
+          cp -r dist frontend-go-server/dist
+        if: matrix.build_frontend
+        shell: bash
+
+      - name: Copy dist to Go server
+        if: not(matrix.build_frontend)
+        run: |
+          Remove-Item -Force -Recurse -Path "frontend-go-server\dist" -ErrorAction SilentlyContinue
+          Copy-Item -Recurse -Path "dist" -Destination "frontend-go-server\dist"
+        shell: pwsh
+
+      # build binary
+      - name: Build Go Server
+        working-directory: frontend-go-server
+        run: |
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build \
+            -o ${{ env.BINARY_NAME }}-${{ matrix.suffix }}${{ matrix.ext }} \
+            .
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+
+      # upload binary artifact
+      - name: Upload binary for release
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-binaries
+          path: frontend-go-server/${{ env.BINARY_NAME }}-${{ matrix.suffix }}${{ matrix.ext }}
+          retention-days: 1
+
+  # create github release and upload assets
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-binaries
+          path: .
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ needs.build.outputs.version }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Linux Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./frontend-server-linux-amd64
+          asset_name: frontend-server-linux-amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./frontend-server-windows-amd64.exe
+          asset_name: frontend-server-windows-amd64.exe
+          asset_content_type: application/octet-stream
