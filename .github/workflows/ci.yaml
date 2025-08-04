@@ -9,7 +9,32 @@ env:
   BINARY_NAME: frontend-server
 
 jobs:
-  build:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build React App
+        run: |
+          npm ci
+          npm run build
+          echo "Frontend built: dist/ created"
+
+      - name: Upload dist folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+          retention-days: 1
+
+  build-binaries:
+    needs: build-frontend
     strategy:
       matrix:
         include:
@@ -18,14 +43,12 @@ jobs:
             goarch: amd64
             ext: ""
             suffix: linux-amd64
-            build_frontend: true
           
           - os: windows-latest
             goos: windows
             goarch: amd64
             ext: ".exe"
             suffix: windows-amd64
-            build_frontend: false
 
     runs-on: ${{ matrix.os }}
 
@@ -38,53 +61,22 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Get version from tag
-        id: get_version
-        run: |
-          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-        shell: bash
-
-      # Build frontend (only on Linux)
-      - name: Build React App
-        if: matrix.build_frontend
-        run: |
-          npm ci
-          npm run build
-          echo "Frontend built: dist/ created"
-
-      # Upload dist/ folder (from Linux)
-      - name: Upload dist folder
-        if: matrix.build_frontend
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: dist/
-          retention-days: 1
-
-      # Download dist folder on Windows
       - name: Download dist folder
-        if: matrix.build_frontend == false
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: dist/
 
-      # Copy dist into frontend-go-server (Linux)
-      - name: Copy dist to Go server
-        if: matrix.build_frontend
+      # Copy dist into frontend-go-server
+      - name: Copy dist to Go server (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           rm -rf frontend-go-server/dist
           cp -r dist frontend-go-server/dist
         shell: bash
 
-      # Copy dist into frontend-go-server (Windows)
-      - name: Copy dist to Go server
-        if: matrix.build_frontend == false
+      - name: Copy dist to Go server (Windows)
+        if: matrix.os == 'windows-latest'
         run: |
           Remove-Item -Force -Recurse -Path "frontend-go-server\dist" -ErrorAction SilentlyContinue
           Copy-Item -Recurse -Path "dist" -Destination "frontend-go-server\dist"
