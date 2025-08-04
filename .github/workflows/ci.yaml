@@ -62,7 +62,7 @@ jobs:
       
       - name: Upload dist folder
         if: matrix.build_frontend
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: dist/
@@ -72,7 +72,7 @@ jobs:
       
       - name: Download dist folder
         if: matrix.build_frontend == false
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: dist/
@@ -106,7 +106,7 @@ jobs:
 
       # upload binary artifact
       - name: Upload binary for release
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-binaries
           path: frontend-go-server/${{ env.BINARY_NAME }}-${{ matrix.suffix }}${{ matrix.ext }}
@@ -121,7 +121,7 @@ jobs:
 
     steps:
       - name: Download all binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: frontend-binaries
           path: .
