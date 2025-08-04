@@ -99,9 +99,8 @@ jobs:
           path: frontend-go-server/${{ env.BINARY_NAME }}-${{ matrix.suffix }}${{ matrix.ext }}
           retention-days: 1
 
-  # Create github release and upload assets
   release:
-    needs: build
+    needs: build-binaries
     runs-on: ubuntu-latest
     permissions:
       contents: write
