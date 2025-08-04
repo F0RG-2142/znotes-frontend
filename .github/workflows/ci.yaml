@@ -97,9 +97,7 @@ jobs:
       - name: Build Go Server
         working-directory: frontend-go-server
         run: |
-          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build \
-            -o ${{ env.BINARY_NAME }}-${{ matrix.suffix }}${{ matrix.ext }} \
-            .
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o ${{ env.BINARY_NAME }}-${{ matrix.suffix }}${{ matrix.ext }} .
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
