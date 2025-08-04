@@ -49,8 +49,7 @@ jobs:
           echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
         shell: bash
 
-      # bbuild frontend (only on Linux)
-      
+      # Build frontend (only on Linux)
       - name: Build React App
         if: matrix.build_frontend
         run: |
@@ -58,8 +57,7 @@ jobs:
           npm run build
           echo "Frontend built: dist/ created"
 
-       # upload dist/ folder (from Linux)
-      
+      # Upload dist/ folder (from Linux)
       - name: Upload dist folder
         if: matrix.build_frontend
         uses: actions/upload-artifact@v4
@@ -68,8 +66,7 @@ jobs:
           path: dist/
           retention-days: 1
 
-      # download dist folder on Windows
-      
+      # Download dist folder on Windows
       - name: Download dist folder
         if: matrix.build_frontend == false
         uses: actions/download-artifact@v4
@@ -77,15 +74,15 @@ jobs:
           name: frontend-dist
           path: dist/
 
-      # copy dist into frontend-go-server
+      # Copy dist into frontend-go-server (Linux)
       - name: Copy dist to Go server
+        if: matrix.build_frontend
         run: |
-          # Ensure target directory exists
           rm -rf frontend-go-server/dist
           cp -r dist frontend-go-server/dist
-        if: matrix.build_frontend
         shell: bash
 
+      # Copy dist into frontend-go-server (Windows)
       - name: Copy dist to Go server
         if: matrix.build_frontend == false
         run: |
@@ -93,24 +90,24 @@ jobs:
           Copy-Item -Recurse -Path "dist" -Destination "frontend-go-server\dist"
         shell: pwsh
 
-      # build binary
+      # Build binary
       - name: Build Go Server
         working-directory: frontend-go-server
-        run: |
-          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o ${{ env.BINARY_NAME }}-${{ matrix.suffix }}${{ matrix.ext }} .
+        run: go build -o ${{ env.BINARY_NAME }}-${{ matrix.suffix }}${{ matrix.ext }} .
         env:
+          CGO_ENABLED: 0
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
 
-      # upload binary artifact
+      # Upload binary artifact
       - name: Upload binary for release
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-binaries
+          name: frontend-binaries-${{ matrix.suffix }}
           path: frontend-go-server/${{ env.BINARY_NAME }}-${{ matrix.suffix }}${{ matrix.ext }}
           retention-days: 1
 
-  # create github release and upload assets
+  # Create github release and upload assets
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -118,11 +115,22 @@ jobs:
       contents: write
 
     steps:
-      - name: Download all binaries
+      - name: Get version from tag
+        id: get_version
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download Linux binary
         uses: actions/download-artifact@v4
         with:
-          name: frontend-binaries
-          path: .
+          name: frontend-binaries-linux-amd64
+          path: ./binaries
+
+      - name: Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-binaries-windows-amd64
+          path: ./binaries
 
       - name: Create Release
         id: create_release
@@ -131,7 +139,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ needs.build.outputs.version }}
+          release_name: Release ${{ steps.get_version.outputs.VERSION }}
           draft: false
           prerelease: false
 
@@ -141,7 +149,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./frontend-server-linux-amd64
+          asset_path: ./binaries/frontend-server-linux-amd64
           asset_name: frontend-server-linux-amd64
           asset_content_type: application/octet-stream
 
@@ -151,6 +159,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./frontend-server-windows-amd64.exe
+          asset_path: ./binaries/frontend-server-windows-amd64.exe
           asset_name: frontend-server-windows-amd64.exe
           asset_content_type: application/octet-stream
